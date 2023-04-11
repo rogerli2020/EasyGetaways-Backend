@@ -13,6 +13,7 @@ class Itinerary(models.Model):
     state = models.CharField(max_length=255, default="PLACEHOLDER_STATE")
     country = models.CharField(max_length=255, default="PLACEHOLDER_COUNTRY")
     title = models.CharField(max_length=255, default="Untitiled")
+    description = models.CharField(max_length=1024, default="This itinerary does not have a description yet...")
     est_budget_up = models.IntegerField(default=10)
     est_budget_down = models.IntegerField(default=0)
 

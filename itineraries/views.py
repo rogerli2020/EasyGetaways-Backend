@@ -3,9 +3,9 @@ from itineraries.models import Itinerary
 from django.http import JsonResponse, HttpResponse
 from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime
 import json
 import jwt
-import itertools
 
 
 SECRET = 'django-insecure-a(o^i#n&lao7enyg-b1(2c73qxvmt7p=#azi=os3i@ub9$b9)$'
@@ -56,17 +56,58 @@ def insert_new_itin(request):
         title = "Untitled Itinerary" if not "title" in rbody else rbody["title"],
         est_budget_up = 0 if not "est_budget_up" in rbody else rbody["est_budget_up"],
         est_budget_down = 0 if not "est_budget_down" in rbody else rbody["est_budget_down"],
+        description = "This itinerary does not have a description yet." if not "description" in rbody else rbody["description"],
         itinerary = rbody["itinerary"],
         )
     newItin.save()
-    return JsonResponse(["Itinerary saved sync to server successfully."], safe=False)
-
+    return JsonResponse(["success", "Itinerary saved to server successfully."], safe=False)
 
 @csrf_exempt
 def edit_itin(request):
-    # TODO 
-    pass
+    if (request.method != "POST"):
+        resp = HttpResponse()
+        resp.status_code = 405
+        return resp
 
+    required_fields = [
+        "uid", 
+        "jwt", 
+        "tid", 
+        "archived", 
+        "private", 
+        "city", 
+        "state", 
+        "country", 
+        "title", 
+        "est_budget_up", 
+        "est_budget_down", 
+        "itinerary",
+        "description",
+    ]
+    parse_request_results = parse_and_verify_request(request, required_fields)
+    if not parse_request_results[0]: return parse_request_results[1]
+
+    rbody = parse_request_results[1]
+    try:
+        query_res = Itinerary.objects.get(tid=rbody["tid"])
+    except Itinerary.DoesNotExist:
+        resp = HttpResponse()
+        resp.status_code = 404
+        return resp
+    query_res.archived = rbody["archived"]
+    query_res.private = rbody["private"]
+    query_res.city = rbody["city"]
+    query_res.state = rbody["state"]
+    query_res.country = rbody["country"]
+    query_res.title = rbody["title"]
+    query_res.est_budget_up = rbody["est_budget_up"]
+    query_res.est_budget_down = rbody["est_budget_down"]
+    query_res.itinerary = rbody["itinerary"]
+    query_res.description = rbody["description"]
+    query_res.last_modified_at = datetime.now()
+    query_res.save()
+
+    return JsonResponse(["success", "Changes saved to server successfully."], safe=False)
 
 
 @csrf_exempt
