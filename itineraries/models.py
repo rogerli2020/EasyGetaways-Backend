@@ -7,6 +7,7 @@ class Itinerary(models.Model):
     archived = models.BooleanField(default=False)
     private = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=True)
+    forked_from = models.IntegerField(null=True, blank=True, default=None)
     last_modified_at = models.DateTimeField(auto_now=True)
     
     city = models.CharField(max_length=255, default="PLACEHOLDER_CITY")
@@ -19,8 +20,16 @@ class Itinerary(models.Model):
 
     itinerary = models.JSONField()
 
+class Place(models.Model):
+    place_id = models.AutoField(primary_key=True)
+    place_type = models.CharField(max_length=255, default="general")
+    place_x_coordinate = models.DecimalField(decimal_places=5, max_digits=10, default=0.0)
+    place_y_coordinate = models.DecimalField(decimal_places=5, max_digits=10, default=0.0)
+    place_google_link = models.CharField(max_length=512, default="https://goo.gl/maps/6N5kYyXZWXFNiivE7")
+    place_json_info = models.JSONField() # stuff from Google Maps API
 
-class ItineraryPermission(models.Model):
-    user_itin_pair_id = models.AutoField(primary_key=True)
+class PlaceToUser(models.Model):
+    class Meta():
+        pass
     uid = models.IntegerField()
-    tid = models.IntegerField()
+    place_id = models.IntegerField()

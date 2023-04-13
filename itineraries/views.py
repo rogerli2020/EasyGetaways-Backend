@@ -1,9 +1,10 @@
 from django.shortcuts import render
-from itineraries.models import Itinerary
-from django.http import JsonResponse, HttpResponse
+from itineraries.models import Itinerary, Place, PlaceToUser
+from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
+from rest_framework import status
 import json
 import jwt
 
@@ -16,10 +17,8 @@ def get_all_user_itin(request):
 
     # if method is not GET, return 405.
     if (request.method != "GET"):
-        resp = HttpResponse()
-        resp.status_code = 405
-        return resp
-    
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     required_fields = ["jwt", "uid"]
     parse_request_results = parse_and_verify_request(request, required_fields)
     if not parse_request_results[0]: return parse_request_results[1]
@@ -37,9 +36,8 @@ def get_all_user_itin(request):
 def insert_new_itin(request):
 
     if (request.method != "POST"):
-        resp = HttpResponse()
-        resp.status_code = 405
-        return resp
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
     required_fields = ["uid", "jwt", "itinerary"]
     parse_request_results = parse_and_verify_request(request, required_fields)
@@ -60,54 +58,62 @@ def insert_new_itin(request):
         itinerary = rbody["itinerary"],
         )
     newItin.save()
-    return JsonResponse(["success", "Itinerary saved to server successfully."], safe=False)
+    return JsonResponse({'Success': 'Itinerary saved to server successfully.'}, status=status.HTTP_200_OK)
+
 
 @csrf_exempt
 def edit_itin(request):
-    if (request.method != "POST"):
-        resp = HttpResponse()
-        resp.status_code = 405
-        return resp
+    if (request.method == "POST"):
+        required_fields = [
+            "uid", 
+            "jwt", 
+            "tid", 
+            "archived", 
+            "private", 
+            "city", 
+            "state", 
+            "country", 
+            "title", 
+            "est_budget_up", 
+            "est_budget_down", 
+            "itinerary",
+            "description",
+        ]
+        parse_request_results = parse_and_verify_request(request, required_fields)
+        if not parse_request_results[0]: return parse_request_results[1]
 
-    required_fields = [
-        "uid", 
-        "jwt", 
-        "tid", 
-        "archived", 
-        "private", 
-        "city", 
-        "state", 
-        "country", 
-        "title", 
-        "est_budget_up", 
-        "est_budget_down", 
-        "itinerary",
-        "description",
-    ]
-    parse_request_results = parse_and_verify_request(request, required_fields)
-    if not parse_request_results[0]: return parse_request_results[1]
+        rbody = parse_request_results[1]
+        try:
+            query_res = Itinerary.objects.get(tid=rbody["tid"])
+        except Itinerary.DoesNotExist:
+            return JsonResponse({'Error': 'Itinerary not found.'}, status=status.HTTP_404_NOT_FOUND)
+        query_res.archived = rbody["archived"]
+        query_res.private = rbody["private"]
+        query_res.city = rbody["city"]
+        query_res.state = rbody["state"]
+        query_res.country = rbody["country"]
+        query_res.title = rbody["title"]
+        query_res.est_budget_up = rbody["est_budget_up"]
+        query_res.est_budget_down = rbody["est_budget_down"]
+        query_res.itinerary = rbody["itinerary"]
+        query_res.description = rbody["description"]
+        query_res.last_modified_at = datetime.now()
+        query_res.save()
 
-    rbody = parse_request_results[1]
-    try:
-        query_res = Itinerary.objects.get(tid=rbody["tid"])
-    except Itinerary.DoesNotExist:
-        resp = HttpResponse()
-        resp.status_code = 404
-        return resp
-    query_res.archived = rbody["archived"]
-    query_res.private = rbody["private"]
-    query_res.city = rbody["city"]
-    query_res.state = rbody["state"]
-    query_res.country = rbody["country"]
-    query_res.title = rbody["title"]
-    query_res.est_budget_up = rbody["est_budget_up"]
-    query_res.est_budget_down = rbody["est_budget_down"]
-    query_res.itinerary = rbody["itinerary"]
-    query_res.description = rbody["description"]
-    query_res.last_modified_at = datetime.now()
-    query_res.save()
-
-    return JsonResponse(["success", "Changes saved to server successfully."], safe=False)
+        return JsonResponse({"Success": "Changes saved to server successfully."}, safe=False)
+    elif (request.method == "DELETE"):
+        required_fields = ["tid", "jwt", "uid"]
+        parse_request_results = parse_and_verify_request(request, required_fields)
+        if not parse_request_results[0]: return parse_request_results[1]
+        rbody = parse_request_results[1]
+        try:
+            tid = rbody["tid"]
+            Itinerary.objects.get(tid=tid).delete()
+            return JsonResponse({'Success': 'Itinerary deleted.'})
+        except:
+            return JsonResponse({'Error': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @csrf_exempt
@@ -115,9 +121,8 @@ def get_public_itin(request):
 
     # if method is not GET, return 405.
     if (request.method != "GET"):
-        resp = HttpResponse()
-        resp.status_code = 405
-        return resp
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     
     query_res = Itinerary.objects.filter(private=0, archived=0)
     query_res_list = [i.__dict__ for i in list(query_res)]
@@ -130,9 +135,7 @@ def get_public_itin(request):
 def get_itin(request):
     # if method is not GET, return 405.
     if (request.method != "GET"):
-        resp = HttpResponse()
-        resp.status_code = 405
-        return resp
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     required_fields = ["uid", "jwt", "tid"]
     parse_request_results = parse_and_verify_request(request, required_fields, must_verify=False)
@@ -143,35 +146,65 @@ def get_itin(request):
         query_res = Itinerary.objects.get(tid=rbody["tid"])
     except Itinerary.DoesNotExist:
         # if given itinerary does not exist, return 404.
-        resp = HttpResponse()
-        resp.status_code = 404
-        return resp
+        return JsonResponse({'Error': 'Itinerary does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
     query_res = query_res.__dict__
     query_res['_state'] = ""
     if (query_res["private"]):
         if not (verify_jwt(rbody["jwt"], query_res["created_by"])):
-            resp = HttpResponse()
-            resp.status_code = 401
-            return resp
+            return JsonResponse({'Error': 'Authentication failed.'}, status=status.HTTP_401_UNAUTHORIZED)
     return JsonResponse(query_res, safe=False)
 
 
+@csrf_exempt
+def insert_place(request):
+    # if method is not GET, return 405.
+    if (request.method != "POST"):
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    required_fields = ["place_type", "place_json_info"]
+    parse_request_results = parse_and_verify_request(request, required_fields, must_verify=False)
+    if not parse_request_results[0]: return parse_request_results[1]
+
+    rbody = parse_request_results[1]
+    new_place = Place(
+            place_type = "general" if rbody["place_type"] not in ("attraction", "restaurant", "shop") else rbody["place_type"],
+            place_json_info = rbody["place_json_info"],
+        )
+    new_place.save()
+    return JsonResponse({'Success': 'Place saved to server successfully.'}, status=status.HTTP_200_OK)
+
+@csrf_exempt
+def place_to_user(request):
+    if (request.method == "POST"):
+        required_fields = ["place_id", "uid", "jwt"]
+        parse_request_results = parse_and_verify_request(request, required_fields)
+        if not parse_request_results[0]: return parse_request_results[1]
+
+        rbody = parse_request_results[1]
+        new_entry = PlaceToUser(
+            uid = rbody["uid"],
+            place_id = rbody["place_id"],
+        )
+        new_entry.save()
+        return JsonResponse({'Success': 'Place saved successfully.'}, status=status.HTTP_200_OK)
+    elif (request.method == "DELETE"):
+        required_fields = ["place_id", "uid", "jwt"]
+        parse_request_results = parse_and_verify_request(request, required_fields)
+
+    else:
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 def parse_and_verify_request(request, required_fields, must_verify=True):
-    resp = HttpResponse()
     parse_request_results = parse_request(request, required_fields)
-
     # if the body does not contain required fields, return 400 error code.
     if not parse_request_results[0]:
-        resp.status_code = 400
-        return False, resp
-    
+        return False, JsonResponse({'Error': 'Bad request.'}, status=status.HTTP_400_BAD_REQUEST)
     rbody = parse_request_results[1]
     # if the JWT is invalid, return 401 error code.
     if "jwt" in required_fields and must_verify:
         if not verify_jwt(rbody["jwt"], rbody["uid"]):
-            resp.status_code = 401
-            return False, resp
+            return False, JsonResponse({'Error': 'Authentication failed, please try logging in again.'}, status=status.HTTP_401_UNAUTHORIZED)
         
     return True, rbody
 
