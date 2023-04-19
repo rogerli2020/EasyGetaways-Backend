@@ -8,16 +8,13 @@ from rest_framework import status
 import json
 import jwt
 
-
 SECRET = 'django-insecure-a(o^i#n&lao7enyg-b1(2c73qxvmt7p=#azi=os3i@ub9$b9)$'
-
 
 @csrf_exempt
 def get_all_user_itin(request):
 
     # if method is not GET, return 405.
-    if (request.method != "GET"):
-        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    if (request.method != "GET"): return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     required_fields = ["jwt", "uid"]
     parse_request_results = parse_and_verify_request(request, required_fields)
@@ -35,9 +32,7 @@ def get_all_user_itin(request):
 @csrf_exempt
 def insert_new_itin(request):
 
-    if (request.method != "POST"):
-        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
+    if (request.method != "POST"):  return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     required_fields = ["uid", "jwt", "itinerary"]
     parse_request_results = parse_and_verify_request(request, required_fields)
@@ -81,26 +76,29 @@ def edit_itin(request):
         ]
         parse_request_results = parse_and_verify_request(request, required_fields)
         if not parse_request_results[0]: return parse_request_results[1]
-
         rbody = parse_request_results[1]
         try:
             query_res = Itinerary.objects.get(tid=rbody["tid"])
         except Itinerary.DoesNotExist:
             return JsonResponse({'Error': 'Itinerary not found.'}, status=status.HTTP_404_NOT_FOUND)
-        query_res.archived = rbody["archived"]
-        query_res.private = rbody["private"]
-        query_res.city = rbody["city"]
-        query_res.state = rbody["state"]
-        query_res.country = rbody["country"]
-        query_res.title = rbody["title"]
-        query_res.est_budget_up = rbody["est_budget_up"]
-        query_res.est_budget_down = rbody["est_budget_down"]
-        query_res.itinerary = rbody["itinerary"]
-        query_res.description = rbody["description"]
-        query_res.last_modified_at = datetime.now()
-        query_res.save()
-
+        try:
+            query_res.archived = rbody["archived"]
+            query_res.private = rbody["private"]
+            query_res.city = rbody["city"]
+            query_res.state = rbody["state"]
+            query_res.country = rbody["country"]
+            query_res.title = rbody["title"]
+            query_res.est_budget_up = rbody["est_budget_up"]
+            query_res.est_budget_down = rbody["est_budget_down"]
+            query_res.itinerary = rbody["itinerary"]
+            query_res.description = rbody["description"]
+            query_res.last_modified_at = datetime.now()
+            query_res.save()
+        except:
+            return JsonResponse({'Error': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return JsonResponse({"Success": "Changes saved to server successfully."}, safe=False)
+    
+
     elif (request.method == "DELETE"):
         required_fields = ["tid", "jwt", "uid"]
         parse_request_results = parse_and_verify_request(request, required_fields)
@@ -112,24 +110,20 @@ def edit_itin(request):
             return JsonResponse({'Success': 'Itinerary deleted.'})
         except:
             return JsonResponse({'Error': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
     else:
         return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @csrf_exempt
 def get_public_itin(request):
-
     # if method is not GET, return 405.
-    if (request.method != "GET"):
-        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    
+    if (request.method != "GET"): return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     query_res = Itinerary.objects.filter(private=0, archived=0)
     query_res_list = [i.__dict__ for i in list(query_res)]
     for i in query_res_list: i['_state'] = "" # don't know what this is but its messing up the serialization stuff
     return JsonResponse(query_res_list, safe=False)
-
-
 
 @csrf_exempt
 def get_itin(request):
@@ -158,42 +152,88 @@ def get_itin(request):
 
 @csrf_exempt
 def insert_place(request):
-    # if method is not GET, return 405.
-    if (request.method != "POST"):
-        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    if (request.method != "POST"): return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    required_fields = ["place_type", "place_json_info"]
-    parse_request_results = parse_and_verify_request(request, required_fields, must_verify=False)
+    parse_request_results = parse_and_verify_request(request, required_fields=[])
     if not parse_request_results[0]: return parse_request_results[1]
 
-    rbody = parse_request_results[1]
-    new_place = Place(
-            place_type = "general" if rbody["place_type"] not in ("attraction", "restaurant", "shop") else rbody["place_type"],
-            place_json_info = rbody["place_json_info"],
+    try:
+        rbody = parse_request_results[1]
+        new_place = Place(
+            place_id_google = None if not "place_id_google" in rbody else rbody["place_id_google"],
+            place_type = "General" if not "place_type" in rbody else rbody["place_type"],
+            place_lat = 0.0000000 if not "place_lat" in rbody else rbody["place_lat"],
+            place_lng = 0.0000000 if not "place_lng" in rbody else rbody["place_lng"],
+            place_google_json = {"details": "Google Places JSON not provided."} if not "place_google_json" in rbody else rbody["place_google_json"],
         )
-    new_place.save()
+        new_place.save()
+    except Exception as e:
+        print(e)
+        return JsonResponse({'False': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return JsonResponse({'Success': 'Place saved to server successfully.'}, status=status.HTTP_200_OK)
 
+
 @csrf_exempt
-def place_to_user(request):
-    if (request.method == "POST"):
-        required_fields = ["place_id", "uid", "jwt"]
+def user_places(request):
+    if request.method == "GET":
+        parse_request_results = parse_and_verify_request(request, required_fields=["place_id"])
+        if not parse_request_results[0]: return parse_request_results[1]
+        rbody = parse_request_results[1]
+
+        try:
+            query_res = Place.objects.get(place_id=rbody["place_id"])
+        except Place.DoesNotExist:
+            # if given itinerary does not exist, return 404.
+            return JsonResponse({'Error': 'Itinerary does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+        query_res = query_res.__dict__
+        query_res['_state'] = ""
+        return JsonResponse(query_res, safe=False)
+
+    elif request.method == "POST":
+        required_fields = ["jwt", "uid", "place_id", "name"]
         parse_request_results = parse_and_verify_request(request, required_fields)
         if not parse_request_results[0]: return parse_request_results[1]
 
-        rbody = parse_request_results[1]
-        new_entry = PlaceToUser(
-            uid = rbody["uid"],
-            place_id = rbody["place_id"],
-        )
-        new_entry.save()
-        return JsonResponse({'Success': 'Place saved successfully.'}, status=status.HTTP_200_OK)
-    elif (request.method == "DELETE"):
-        required_fields = ["place_id", "uid", "jwt"]
-        parse_request_results = parse_and_verify_request(request, required_fields)
+        try:
+            rbody = parse_request_results[1]
+            new_entry = PlaceToUser(
+                uid=rbody["uid"],
+                place_id=rbody["place_id"],
+                name=rbody["name"]
+            )
+            new_entry.save()
+        except:
+            return JsonResponse({'False': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return JsonResponse({'Success': 'Place saved.'}, status=status.HTTP_200_OK)
 
+    elif request.method == "DELETE":
+        required_fields = ["place_id", "jwt", "uid"]
+        parse_request_results = parse_and_verify_request(request, required_fields)
+        if not parse_request_results[0]: return parse_request_results[1]
+        rbody = parse_request_results[1]
+        try:
+            PlaceToUser.objects.get(uid=rbody["uid"], place_id=rbody["place_id"]).delete()
+            return JsonResponse({'Success': 'Place deleted.'})
+        except:
+            return JsonResponse({'Error': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
     else:
         return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@csrf_exempt
+def get_my_places(request):
+    if request.method != "GET": return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    parse_request_results = parse_and_verify_request(request, required_fields=["uid"])
+    if not parse_request_results[0]: return parse_request_results[1]
+    try:
+        rbody = parse_request_results[1]
+        res = PlaceToUser.objects.filter(uid=rbody["uid"])
+        query_res_list = [i.__dict__ for i in list(res)]
+        for i in query_res_list: i['_state'] = ""
+        return JsonResponse(query_res_list, safe=False)
+    except:
+        return JsonResponse({'Error': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def parse_and_verify_request(request, required_fields, must_verify=True):
     parse_request_results = parse_request(request, required_fields)
@@ -207,11 +247,6 @@ def parse_and_verify_request(request, required_fields, must_verify=True):
             return False, JsonResponse({'Error': 'Authentication failed, please try logging in again.'}, status=status.HTTP_401_UNAUTHORIZED)
         
     return True, rbody
-
-
-def convert__to_dict(qres):
-    for i in range(len(qres)):
-        qres[i] = model_to_dict(qres[i], fields=[field.name for field in qres[i]._meta.fields])
 
 def verify_jwt(token, uid):
     try:

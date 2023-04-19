@@ -1,5 +1,10 @@
 from django.db import models
 
+def place_json_placeholder():
+    google_json_placeholder = dict()
+    google_json_placeholder["details"] = "This Place does not have a Google Places JSON attached."
+    return google_json_placeholder
+
 # Create your models here.
 class Itinerary(models.Model):
     tid = models.AutoField(primary_key=True)
@@ -22,14 +27,15 @@ class Itinerary(models.Model):
 
 class Place(models.Model):
     place_id = models.AutoField(primary_key=True)
+    place_id_google = models.CharField(max_length=127, null=True, blank=True, default=None)
     place_type = models.CharField(max_length=255, default="general")
-    place_x_coordinate = models.DecimalField(decimal_places=5, max_digits=10, default=0.0)
-    place_y_coordinate = models.DecimalField(decimal_places=5, max_digits=10, default=0.0)
-    place_google_link = models.CharField(max_length=512, default="https://goo.gl/maps/6N5kYyXZWXFNiivE7")
-    place_json_info = models.JSONField() # stuff from Google Maps API
+    place_lat = models.DecimalField(max_digits=20, decimal_places=15, default=0.0000000000) # 33.866489
+    place_lng = models.DecimalField(max_digits=20, decimal_places=15, default=0.0000000000)
+    place_google_json = models.JSONField(null=True, default=place_json_placeholder) # stuff from Google Maps API
 
 class PlaceToUser(models.Model):
-    class Meta():
-        pass
+    class Meta:
+        unique_together = ('uid', 'place_id',)
     uid = models.IntegerField()
     place_id = models.IntegerField()
+    name = models.CharField(max_length=127, default="Untitled Place")
