@@ -14,7 +14,7 @@ SECRET = 'django-insecure-a(o^i#n&lao7enyg-b1(2c73qxvmt7p=#azi=os3i@ub9$b9)$'
 def get_all_user_itin(request):
 
     # if method is not GET, return 405.
-    if (request.method != "GET"): return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    if (request.method != "POST"): return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     required_fields = ["jwt", "uid"]
     parse_request_results = parse_and_verify_request(request, required_fields)
@@ -128,7 +128,7 @@ def get_public_itin(request):
 @csrf_exempt
 def get_itin(request):
     # if method is not GET, return 405.
-    if (request.method != "GET"):
+    if (request.method != "POST"):
         return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     required_fields = ["uid", "jwt", "tid"]
@@ -175,7 +175,7 @@ def insert_place(request):
 
 @csrf_exempt
 def user_places(request):
-    if request.method == "GET":
+    if request.method == "POST":
         parse_request_results = parse_and_verify_request(request, required_fields=["place_id"])
         if not parse_request_results[0]: return parse_request_results[1]
         rbody = parse_request_results[1]
