@@ -28,8 +28,8 @@ SECRET_KEY = 'django-insecure-a(o^i#n&lao7enyg-b1(2c73qxvmt7p=#azi=os3i@ub9$b9)$
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    # '127.0.0.1',
-    # '10.16.174.104',
+    '127.0.0.1',
+    'easy-getaways.herokuapp.com',
 ]
 
 
