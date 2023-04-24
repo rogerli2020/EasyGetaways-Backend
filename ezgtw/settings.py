@@ -168,3 +168,5 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:19006",
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
