@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from itineraries.models import Itinerary, Place, PlaceToUser
+from itineraries.models import Itinerary, Place
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
@@ -174,62 +174,51 @@ def insert_place(request):
 
 
 @csrf_exempt
-def user_places(request):
+def insert_place(request):
     if request.method == "POST":
-        parse_request_results = parse_and_verify_request(request, required_fields=["place_id"])
-        if not parse_request_results[0]: return parse_request_results[1]
-        rbody = parse_request_results[1]
-
-        try:
-            query_res = Place.objects.get(place_id=rbody["place_id"])
-        except Place.DoesNotExist:
-            # if given itinerary does not exist, return 404.
-            return JsonResponse({'Error': 'Itinerary does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-
-        query_res = query_res.__dict__
-        query_res['_state'] = ""
-        return JsonResponse(query_res, safe=False)
-
-    elif request.method == "POST":
-        required_fields = ["jwt", "uid", "place_id", "name"]
+        required_fields = ["jwt", "uid", "place_json"]
         parse_request_results = parse_and_verify_request(request, required_fields)
         if not parse_request_results[0]: return parse_request_results[1]
 
         try:
             rbody = parse_request_results[1]
-            new_entry = PlaceToUser(
+            new_entry = Place(
                 uid=rbody["uid"],
-                place_id=rbody["place_id"],
-                name=rbody["name"]
+                place_json=rbody["place_json"]
             )
             new_entry.save()
-        except:
+        except Exception as e:
+            print(e)
             return JsonResponse({'False': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return JsonResponse({'Success': 'Place saved.'}, status=status.HTTP_200_OK)
+    else:
+        return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    elif request.method == "DELETE":
+@csrf_exempt
+def delete_place(request):
+    if request.method == "POST":
         required_fields = ["place_id", "jwt", "uid"]
         parse_request_results = parse_and_verify_request(request, required_fields)
         if not parse_request_results[0]: return parse_request_results[1]
         rbody = parse_request_results[1]
         try:
-            PlaceToUser.objects.get(uid=rbody["uid"], place_id=rbody["place_id"]).delete()
+            Place.objects.get(place_id=rbody["place_id"]).delete()
             return JsonResponse({'Success': 'Place deleted.'})
         except:
             return JsonResponse({'Error': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
     else:
         return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 @csrf_exempt
 def get_my_places(request):
-    if request.method != "GET": return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    if request.method != "POST": return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     parse_request_results = parse_and_verify_request(request, required_fields=["uid"])
     if not parse_request_results[0]: return parse_request_results[1]
     try:
         rbody = parse_request_results[1]
-        res = PlaceToUser.objects.filter(uid=rbody["uid"])
+        res = Place.objects.filter(uid=rbody["uid"])
         query_res_list = [i.__dict__ for i in list(res)]
+        query_res_list.reverse()
         for i in query_res_list: i['_state'] = ""
         return JsonResponse(query_res_list, safe=False)
     except:

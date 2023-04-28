@@ -8,6 +8,6 @@ urlpatterns = [
     path('get_public_itin/', views.get_public_itin, name='get_public_itin'),
     path('get_itin/', views.get_itin, name='get_itin'),
     path('insert_place/', views.insert_place, name='insert_place'),
+    path('delete_place/', views.delete_place, name='delete_place'),
     path('get_my_places/', views.get_my_places, name='get_my_places'),
-    path('user_places/', views.user_places, name='user_places'),
 ]
