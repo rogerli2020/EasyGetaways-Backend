@@ -209,6 +209,19 @@ def delete_place(request):
     else:
         return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
+def view_itin(request, tid):
+    try:
+        query_res = Itinerary.objects.get(tid=tid)
+    except Itinerary.DoesNotExist:
+        # if given itinerary does not exist, return 404.
+        return JsonResponse({'Error': 'Itinerary does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+    query_res = query_res.__dict__
+    query_res['_state'] = ""
+    return JsonResponse(query_res, safe=False)
+
+
 @csrf_exempt
 def get_my_places(request):
     if request.method != "POST": return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
