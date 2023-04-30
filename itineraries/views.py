@@ -150,27 +150,27 @@ def get_itin(request):
     return JsonResponse(query_res, safe=False)
 
 
-@csrf_exempt
-def insert_place(request):
-    if (request.method != "POST"): return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+# @csrf_exempt
+# def insert_place(request):
+#     if (request.method != "POST"): return JsonResponse({'Error': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    parse_request_results = parse_and_verify_request(request, required_fields=[])
-    if not parse_request_results[0]: return parse_request_results[1]
+#     parse_request_results = parse_and_verify_request(request, required_fields=[])
+#     if not parse_request_results[0]: return parse_request_results[1]
 
-    try:
-        rbody = parse_request_results[1]
-        new_place = Place(
-            place_id_google = None if not "place_id_google" in rbody else rbody["place_id_google"],
-            place_type = "General" if not "place_type" in rbody else rbody["place_type"],
-            place_lat = 0.0000000 if not "place_lat" in rbody else rbody["place_lat"],
-            place_lng = 0.0000000 if not "place_lng" in rbody else rbody["place_lng"],
-            place_google_json = {"details": "Google Places JSON not provided."} if not "place_google_json" in rbody else rbody["place_google_json"],
-        )
-        new_place.save()
-    except Exception as e:
-        print(e)
-        return JsonResponse({'False': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    return JsonResponse({'Success': 'Place saved to server successfully.'}, status=status.HTTP_200_OK)
+#     try:
+#         rbody = parse_request_results[1]
+#         new_place = Place(
+#             place_id_google = None if not "place_id_google" in rbody else rbody["place_id_google"],
+#             place_type = "General" if not "place_type" in rbody else rbody["place_type"],
+#             place_lat = 0.0000000 if not "place_lat" in rbody else rbody["place_lat"],
+#             place_lng = 0.0000000 if not "place_lng" in rbody else rbody["place_lng"],
+#             place_google_json = {"details": "Google Places JSON not provided."} if not "place_google_json" in rbody else rbody["place_google_json"],
+#         )
+#         new_place.save()
+#     except Exception as e:
+#         print(e)
+#         return JsonResponse({'False': 'Internal server error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     return JsonResponse({'Success': 'Place saved to server successfully.'}, status=status.HTTP_200_OK)
 
 
 @csrf_exempt
