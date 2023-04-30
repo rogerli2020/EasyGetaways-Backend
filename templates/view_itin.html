@@ -33,21 +33,21 @@
         <p> Created on {{created_at}} </p>
             
                 <h4>Destinations</h4>
+ 
+                    {% for i in itinerary %}
 
-                <div class="card">
-                    <ul class="list-group list-group-flush">
-                        
-                        {% for i in itinerary %}
-                            <li class="list-group-item">
-                                <h2>{{i.place_json.name}}</h2>
-                                <span class="badge bg-secondary">{{i.place_json.type}}</span>
-                                <p>{{i.place_json.location}}</p>
-                                <a href="{{i.place_json.url}}">Visit Link</a>
-                            </li>
-                        {% endfor %}
 
-                    </ul>
-                  </div>
+                    <div class="card mb-3">
+                        <img class="card-img-top" style="max-height: 100px; height: 100%" src="{{i.photo.images.original.url}}" alt="Card image cap">
+                        <div class="card-body">
+                          <h5 class="card-title">{{i.place_json.name}}</h5>
+                          <p class="card-text">{{i.place_json.address}}</p>
+                          <a href="{{i.place_json.website}}" class="btn btn-primary">Visit Site</a>
+                        </div>
+                    </div>
+
+                    {% endfor %}
+
 
 
 
