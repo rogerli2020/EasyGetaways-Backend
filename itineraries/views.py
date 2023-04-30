@@ -219,7 +219,10 @@ def view_itin(request, tid):
 
     query_res = query_res.__dict__
     query_res['_state'] = ""
-    return JsonResponse(query_res, safe=False)
+
+    context = query_res
+
+    return render(request, "view_itin.html", context)
 
 
 @csrf_exempt
