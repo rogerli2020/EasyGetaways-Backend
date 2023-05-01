@@ -1,11 +1,15 @@
 # EasyGetaways-Backend
  Backend Django application for the Easy Getaways application for Design Project (CS-UY 4523).
 
+## Install Directions
+- Set up a Python virtual environment
+- Install all dependencies listed in requirements.txt by running pip install -r requirements.txt.
+
 ## Reminder:
 - Change the SECRET_KEY before production deployment. 
 - Don't use real username/password during development process...
 
-## Endpoints:
+## Endpoints (SUBJECT TO CHANGE):
 Subject to change.
 - dj-rest-auth/ login/
     - Method: POST
@@ -59,3 +63,4 @@ Subject to change.
         - tid (t stands for itinerary... which I know doesn't make sense)
         - uid (relevant if the itinerary is private, but it's required anyway)
         - jwt (relevant if the itinerary is private, but it's required anyway)
+- ... Look at view.py for more detail.
